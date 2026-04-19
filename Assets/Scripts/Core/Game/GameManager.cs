@@ -17,6 +17,9 @@ public class GameManager : MonoBehaviour
     public event Action<GameState> OnGameStateChanged;
     public event Action<int> OnScoreChanged;
 
+    private int cachedScreenWidth;
+    private int cachedScreenHeight;
+
     public GameConfig Config => gameConfig;
     public PoolManager Pool => poolManager;
     public GameState CurrentState => currentState;
@@ -32,7 +35,20 @@ public class GameManager : MonoBehaviour
         }
 
         Instance = this;
+        RefreshLaneLayout();
+        CacheScreenSize();
         ApplyInitialRuntimeValues();
+    }
+
+    private void Update()
+    {
+        if (cachedScreenWidth == Screen.width && cachedScreenHeight == Screen.height)
+        {
+            return;
+        }
+
+        RefreshLaneLayout();
+        CacheScreenSize();
     }
 
     public void StartGame()
@@ -137,5 +153,21 @@ public class GameManager : MonoBehaviour
 
         currentState = newState;
         OnGameStateChanged?.Invoke(currentState);
+    }
+
+    private void RefreshLaneLayout()
+    {
+        if (gameConfig == null)
+        {
+            return;
+        }
+
+        gameConfig.RecalculateLaneLayout(Camera.main);
+    }
+
+    private void CacheScreenSize()
+    {
+        cachedScreenWidth = Screen.width;
+        cachedScreenHeight = Screen.height;
     }
 }

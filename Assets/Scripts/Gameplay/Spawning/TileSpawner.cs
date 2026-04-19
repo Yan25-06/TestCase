@@ -18,6 +18,7 @@ public class TileSpawner : MonoBehaviour
     private float elapsedTime;
     private float nextSpawnAt;
     private bool isSpawning;
+    private bool isBoundToGameManager;
 
     public IReadOnlyList<SpawnSequence> SpawnHistory => spawnHistory;
 
@@ -28,22 +29,26 @@ public class TileSpawner : MonoBehaviour
 
     private void OnEnable()
     {
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.OnGameStateChanged += HandleGameStateChanged;
-        }
+        TryBindToGameManager();
     }
 
     private void OnDisable()
     {
-        if (GameManager.Instance != null)
+        if (isBoundToGameManager && GameManager.Instance != null)
         {
             GameManager.Instance.OnGameStateChanged -= HandleGameStateChanged;
         }
+
+        isBoundToGameManager = false;
     }
 
     private void Update()
     {
+        if (!isBoundToGameManager)
+        {
+            TryBindToGameManager();
+        }
+
         if (!isSpawning)
         {
             return;
@@ -132,11 +137,27 @@ public class TileSpawner : MonoBehaviour
     private void RebuildPatternProvider()
     {
         int laneCount = 4;
-        if (GameManager.Instance != null && GameManager.Instance.Config != null && GameManager.Instance.Config.LaneXPositions != null)
+        if (GameManager.Instance != null && GameManager.Instance.Config != null)
         {
-            laneCount = Mathf.Max(1, GameManager.Instance.Config.LaneXPositions.Length);
+            laneCount = Mathf.Max(1, GameManager.Instance.Config.LaneCount);
         }
 
         patternProvider = new SpawnPatternProvider(laneCount, maxConsecutiveSameLane, randomSeed);
+    }
+
+    private void TryBindToGameManager()
+    {
+        if (isBoundToGameManager || GameManager.Instance == null)
+        {
+            return;
+        }
+
+        GameManager.Instance.OnGameStateChanged += HandleGameStateChanged;
+        isBoundToGameManager = true;
+
+        if (autoStartWhenGamePlaying && GameManager.Instance.CurrentState == GameState.Playing)
+        {
+            BeginSpawning();
+        }
     }
 }

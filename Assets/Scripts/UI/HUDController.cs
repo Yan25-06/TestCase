@@ -1,9 +1,9 @@
 using UnityEngine;
-using UnityEngine.UI;
+using TMPro;
 
 public class HUDController : MonoBehaviour
 {
-    [SerializeField] private Text scoreText;
+    [SerializeField] private TMP_Text scoreText;
 
     private void OnEnable()
     {

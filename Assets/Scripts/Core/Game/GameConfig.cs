@@ -4,7 +4,9 @@ using UnityEngine;
 public class GameConfig : ScriptableObject
 {
     [Header("Lane Layout")]
-    [SerializeField] private float[] laneXPositions = new float[] { -1.5f, -0.5f, 0.5f, 1.5f };
+    [SerializeField] private int laneCount = 4;
+    [SerializeField] private float horizontalPadding = 0f;
+    [SerializeField] private float[] fallbackLaneXPositions = new float[] { -1.5f, -0.5f, 0.5f, 1.5f };
 
     [Header("Scroll")]
     [SerializeField] private float baseScrollSpeed = 4f;
@@ -19,7 +21,12 @@ public class GameConfig : ScriptableObject
     [SerializeField] private float hitWindowTop = -3.1f;
     [SerializeField] private float hitWindowBottom = -4.1f;
 
-    public float[] LaneXPositions => laneXPositions;
+    private float[] runtimeLaneXPositions;
+    private float runtimeLaneWidth;
+
+    public int LaneCount => Mathf.Max(1, laneCount);
+    public float[] LaneXPositions => runtimeLaneXPositions != null && runtimeLaneXPositions.Length > 0 ? runtimeLaneXPositions : fallbackLaneXPositions;
+    public float LaneWidth => runtimeLaneWidth;
     public float BaseScrollSpeed => baseScrollSpeed;
     public float SpeedIncreasePerScore => speedIncreasePerScore;
     public float SpawnInterval => spawnInterval;
@@ -31,12 +38,37 @@ public class GameConfig : ScriptableObject
     public bool TryGetLaneX(int laneIndex, out float x)
     {
         x = 0f;
-        if (laneXPositions == null || laneIndex < 0 || laneIndex >= laneXPositions.Length)
+        float[] lanePositions = LaneXPositions;
+        if (lanePositions == null || laneIndex < 0 || laneIndex >= lanePositions.Length)
         {
             return false;
         }
 
-        x = laneXPositions[laneIndex];
+        x = lanePositions[laneIndex];
         return true;
+    }
+
+    public void RecalculateLaneLayout(Camera targetCamera)
+    {
+        if (targetCamera == null || !targetCamera.orthographic)
+        {
+            runtimeLaneXPositions = fallbackLaneXPositions;
+            runtimeLaneWidth = 0f;
+            return;
+        }
+
+        float halfHeight = targetCamera.orthographicSize;
+        float halfWidth = halfHeight * targetCamera.aspect;
+
+        float totalWidth = Mathf.Max(0.1f, (halfWidth * 2f) - (horizontalPadding * 2f));
+        int count = LaneCount;
+        runtimeLaneWidth = totalWidth / count;
+        runtimeLaneXPositions = new float[count];
+
+        float leftEdge = -halfWidth + horizontalPadding;
+        for (int i = 0; i < count; i++)
+        {
+            runtimeLaneXPositions[i] = leftEdge + runtimeLaneWidth * (i + 0.5f);
+        }
     }
 }

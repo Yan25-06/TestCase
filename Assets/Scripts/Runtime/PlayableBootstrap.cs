@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class PlayableBootstrap : MonoBehaviour
 {
-    [SerializeField] private bool autoStartGame = true;
+    [SerializeField] private bool autoStartGame = false;
 
     private void Start()
     {
