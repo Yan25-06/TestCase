@@ -77,8 +77,8 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: 1456828887
+  m_SortingLayer: 4
   m_SortingOrder: 1
   m_MaskInteraction: 0
   m_Sprite: {fileID: -9057761685452120860, guid: c53d9cadc4b20f14387e724b0ade6804, type: 3}
@@ -188,8 +188,8 @@ MonoBehaviour:
   headRenderer: {fileID: 215118255283917971}
   deadHeadSprite: {fileID: 7450599205057120761, guid: 33bc72d1fb682c646929c34c6fffb87e, type: 3}
   bodyRenderer: {fileID: 4301618970697318498}
-  bodyOriginalColor: {r: 0.9960785, g: 0.07450981, b: 0.5411765, a: 1}
-  bodyHoldColor: {r: 1, g: 0.8862745, b: 0.24705882, a: 1}
+  bodyOriginalColor: {r: 1, g: 0, b: 0.5063832, a: 1}
+  bodyHoldColor: {r: 1, g: 0.8489583, b: 0, a: 1}
   tileState: 0
   laneIndex: 0
 --- !u!1 &8532211398603063381
@@ -269,8 +269,8 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: 1456828887
+  m_SortingLayer: 4
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 2043200573076385317, guid: 221eeebd181dc1c4c8f0c3ba7b87c10a, type: 3}

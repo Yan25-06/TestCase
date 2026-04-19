@@ -41,6 +41,21 @@ public class TileController : MonoBehaviour
     private Sprite _originalHeadSprite;
     private GameConfig _config;
     private Tween _colorTween;
+    private bool _headSwapped = false; // true khi head đã đổi sang XX
+
+    // ============================================================
+    // LIFECYCLE
+    // ============================================================
+    private void Start()
+    {
+        // Auto-tìm bodyRenderer từ child "Body" nếu chưa assign trong Inspector
+        if (bodyRenderer == null)
+        {
+            Transform bodyChild = transform.Find("Body");
+            if (bodyChild != null)
+                bodyRenderer = bodyChild.GetComponent<SpriteRenderer>();
+        }
+    }
 
     // ============================================================
     // INIT — Gọi bởi TileSpawner khi spawn từ pool
@@ -80,8 +95,8 @@ public class TileController : MonoBehaviour
     // ============================================================
     private void Update()
     {
-        if (tileState == TileState.Idle || tileState == TileState.Completed)
-            return;
+        // Idle: trong pool, không làm gì
+        if (tileState == TileState.Idle) return;
 
         // Chỉ scroll khi game đang Playing
         if (GameManager.Instance == null || GameManager.Instance.CurrentState != GameState.Playing)
@@ -90,13 +105,24 @@ public class TileController : MonoBehaviour
         // Cập nhật tốc độ từ GameManager (tăng dần theo score)
         _scrollSpeed = GameManager.Instance.CurrentScrollSpeed;
 
-        // Di chuyển xuống
+        // Di chuyển xuống — kể cả Completed tile vẫn tiếp tục rơi
         transform.Translate(Vector3.down * _scrollSpeed * Time.deltaTime);
 
-        // Check Hit Zone
         float tileBottomY = GetBottomY();
         if (_config != null)
         {
+            if (tileState == TileState.Completed)
+            {
+                // Tile đã được xử lý (Good/Perfect) → tiếp tục rơi xuống
+                // Khi ra khỏi màn hình → silently trả về pool
+                if (tileBottomY < _config.missY)
+                {
+                    if (TilePool.Instance != null)
+                        TilePool.Instance.Return(this);
+                }
+                return;
+            }
+
             // Kiểm tra tile vào Hit Zone
             if (tileState == TileState.Scrolling &&
                 tileBottomY <= _config.hitWindowTop &&
@@ -105,11 +131,36 @@ public class TileController : MonoBehaviour
                 tileState = TileState.InHitZone;
             }
 
-            // Kiểm tra tile bị miss (trôi qua hết)
-            if (tileBottomY < _config.missY && tileState != TileState.Completed)
+            // Đang hold + head vào Hit Zone → tự động đổi head sang XX (Perfect)
+            if (tileState == TileState.Holding && !_headSwapped)
+            {
+                CheckAutoHeadSwap();
+            }
+
+            // Kiểm tra tile bị miss (trôi qua màn hình mà chưa được hit)
+            if (tileBottomY < _config.missY)
             {
                 OnMissed();
             }
+        }
+    }
+
+    /// <summary>
+    /// Kiểm tra khi đang hold: nếu head đã chạm Hit Zone → tự đổi mặt sang XX
+    /// </summary>
+    private void CheckAutoHeadSwap()
+    {
+        if (headRenderer == null || _config == null) return;
+
+        float headY = headRenderer.transform.position.y;
+        if (headY <= _config.hitWindowTop && headY >= _config.hitWindowBottom)
+        {
+            // PERFECT — đổi mặt Tam Giác → XX ngay lập tức
+            _headSwapped = true;
+            if (deadHeadSprite != null)
+                headRenderer.sprite = deadHeadSprite;
+
+            Debug.Log($"[TileController] Head swapped to XX! Lane {laneIndex}");
         }
     }
 
@@ -139,6 +190,7 @@ public class TileController : MonoBehaviour
 
     /// <summary>
     /// Người chơi nhả tay — kiểm tra Good hay Perfect
+    /// Kết quả dựa trên _headSwapped (head đã tự đổi trong Update chưa)
     /// </summary>
     public HitResult OnHoldRelease()
     {
@@ -147,27 +199,16 @@ public class TileController : MonoBehaviour
         if (tileState != TileState.Holding)
             return HitResult.None;
 
-        // Kiểm tra: Head đã vào Hit Zone chưa?
-        bool headInZone = false;
-        if (headRenderer != null && _config != null)
-        {
-            float headY = headRenderer.transform.position.y;
-            headInZone = headY <= _config.hitWindowTop && headY >= _config.hitWindowBottom;
-        }
-
         tileState = TileState.Completed;
 
-        if (headInZone)
+        if (_headSwapped)
         {
-            // PERFECT — đổi mặt Tam Giác → XX
-            if (headRenderer != null && deadHeadSprite != null)
-                headRenderer.sprite = deadHeadSprite;
-
+            // Head đã được swap trong Update() → PERFECT
             return HitResult.Perfect;
         }
         else
         {
-            // GOOD — nhả sớm
+            // Nhả trước khi head vào zone → GOOD
             return HitResult.Good;
         }
     }
@@ -220,6 +261,7 @@ public class TileController : MonoBehaviour
     {
         tileState = TileState.Idle;
         _colorTween?.Kill();
+        _headSwapped = false;
 
         // Reset visuals
         transform.localScale = Vector3.one;

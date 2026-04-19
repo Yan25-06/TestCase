@@ -23,7 +23,12 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameConfig gameConfig;
     public GameConfig Config => gameConfig;
 
+    [Header("=== Intro ===")]
+    [Tooltip("Thời gian delay từ Intro → WaitingToStart (giây). Đặt 0 để skip Intro.")]
+    [SerializeField] private float introDelay = 0.5f;
+
     // ---- State ----
+    private bool _initialized = false;
     private GameState _currentState = GameState.Intro;
     public GameState CurrentState => _currentState;
 
@@ -52,6 +57,8 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        // Force log + event cho lần đầu tiên
+        _initialized = false;
         SetState(GameState.Intro);
     }
 
@@ -64,16 +71,26 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void SetState(GameState newState)
     {
-        if (_currentState == newState) return;
+        // Cho phép lần đầu tiên chạy dù state giống nhau
+        if (_initialized && _currentState == newState) return;
 
         GameState oldState = _currentState;
         _currentState = newState;
+        _initialized = true;
 
         Debug.Log($"[GameManager] State: {oldState} → {newState}");
 
         // Xử lý logic riêng cho từng state
         switch (newState)
         {
+            case GameState.Intro:
+                // Auto chuyển sang WaitingToStart sau introDelay
+                if (introDelay <= 0f)
+                    SetState(GameState.WaitingToStart);
+                else
+                    Invoke(nameof(TransitionToWaitingToStart), introDelay);
+                break;
+
             case GameState.WaitingToStart:
                 // Reset score/combo khi chuẩn bị chơi
                 _score = 0;
@@ -95,6 +112,11 @@ public class GameManager : MonoBehaviour
         }
 
         OnGameStateChanged?.Invoke(oldState, newState);
+    }
+
+    private void TransitionToWaitingToStart()
+    {
+        SetState(GameState.WaitingToStart);
     }
 
     // ============================================================
@@ -154,4 +176,20 @@ public class GameManager : MonoBehaviour
         if (_currentState != GameState.Playing) return;
         SetState(GameState.CTA);
     }
+
+    // ============================================================
+    // DEBUG — Click chuột phải vào component trong Inspector
+    // ============================================================
+
+    [ContextMenu("Debug: Go to WaitingToStart")]
+    private void DebugWaitingToStart() => SetState(GameState.WaitingToStart);
+
+    [ContextMenu("Debug: Go to Playing")]
+    private void DebugPlaying() => SetState(GameState.Playing);
+
+    [ContextMenu("Debug: Trigger GameOver")]
+    private void DebugGameOver() => TriggerGameOver();
+
+    [ContextMenu("Debug: Go to CTA")]
+    private void DebugCTA() => SetState(GameState.CTA);
 }

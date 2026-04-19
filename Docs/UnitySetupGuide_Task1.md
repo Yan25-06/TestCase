@@ -154,7 +154,83 @@ Mở từng prefab, thêm assignment cho field mới:
 
 ---
 
-## 8. Hierarchy tổng thể (sau khi setup)
+## 8. InputHandler (Empty GameObject)
+
+### Hierarchy
+1. **Tạo Empty GameObject** → đặt tên `InputHandler`
+2. Đặt ở root của Scene
+
+### Components
+| Component | Ghi chú |
+|-----------|---------|
+| `InputHandler.cs` | Kéo thả script vào |
+
+### Inspector Assignments
+| Field | Giá trị |
+|-------|---------|
+| `Game Config` | Kéo `Assets/GameConfig.asset` vào |
+| `Main Camera` | Kéo Main Camera vào (hoặc để trống → auto-find) |
+
+---
+
+## 9. ScoreManager (Empty GameObject)
+
+### Hierarchy
+1. **Tạo Empty GameObject** → đặt tên `ScoreManager`
+2. Đặt ở root của Scene
+
+### Components
+| Component | Ghi chú |
+|-----------|---------|
+| `ScoreManager.cs` | Kéo thả script vào |
+
+### Inspector Assignments
+| Field | Giá trị |
+|-------|---------|
+| `Main Camera` | Kéo Main Camera vào (để shake khi Perfect) |
+| `Floating Text Prefab` | **Tùy chọn** — để trống cũng được (auto-tạo runtime). Hoặc tạo prefab TextMeshPro nếu muốn customize font |
+| `Text Offset Y` | `1.5` (mặc định) |
+| `Text Duration` | `0.8` (mặc định) |
+| `Text Rise Distance` | `2` (mặc định) |
+| `Good Color` | Xanh lá `#33D933` |
+| `Perfect Color` | Vàng gold `#FFD900` |
+| `Shake Strength` | `0.3` |
+| `Shake Duration` | `0.2` |
+
+> 💡 **Floating Text Prefab** có thể để trống lúc đầu — ScoreManager sẽ tự tạo TextMeshPro object runtime để test. Khi polish ở Day 2, tạo prefab riêng với font/style đẹp hơn.
+
+---
+
+## 10. AudioManager (Empty GameObject)
+
+### Hierarchy
+1. **Tạo Empty GameObject** → đặt tên `AudioManager`
+2. Đặt ở root của Scene
+
+### Components
+| Component | Ghi chú |
+|-----------|---------|
+| `AudioManager.cs` | Kéo thả script vào |
+| `AudioSource` (x2) | Script sẽ **tự tạo** nếu để trống. Hoặc add thủ công 2 AudioSource |
+
+### Inspector Assignments
+| Field | Giá trị |
+|-------|---------|
+| `Music Source` | Để trống (auto-create) hoặc kéo AudioSource component vào |
+| `Music Clip` | **Kéo file nhạc** (.mp3 hoặc .ogg) vào. ⚠️ File MIDI hiện tại (`MingleGame_Creative_playable.mid`) cần **convert sang mp3/ogg** trước |
+| `Sfx Source` | Để trống (auto-create) hoặc kéo AudioSource thứ 2 vào |
+| `Sfx Tap` | Clip SFX khi tap (tùy chọn) |
+| `Sfx Good Hit` | Clip SFX khi Good Hit (tùy chọn) |
+| `Sfx Perfect Hit` | Clip SFX khi Perfect Hit (tùy chọn) |
+| `Sfx Game Over` | Clip SFX khi Game Over (tùy chọn) |
+| `Music Volume` | `0.7` |
+| `Sfx Volume` | `1.0` |
+
+> ⚠️ **Quan trọng:** File `MingleGame_Creative_playable.mid` là MIDI, Unity không phát trực tiếp được. Cần convert sang `.mp3` hoặc `.ogg` rồi import vào Unity.
+
+---
+
+## 11. Hierarchy tổng thể (sau khi setup)
 
 ```
 Scene: SampleScene
@@ -168,6 +244,9 @@ Scene: SampleScene
 ├── TilePool             [TilePool.cs]
 │   └── (pooled tiles sẽ spawn ở đây)
 ├── TileSpawner          [TileSpawner.cs]
+├── InputHandler         [InputHandler.cs]
+├── ScoreManager         [ScoreManager.cs]
+├── AudioManager         [AudioManager.cs, AudioSource x2]
 └── (UI Canvas — sẽ thêm ở Day 2)
 ```
 
@@ -182,6 +261,19 @@ Hiện tại **KHÔNG cần** tạo Tag hay Layer đặc biệt nào. Tất cả
 
 1. Mở Unity → đợi compile (không có lỗi đỏ trong Console)
 2. Nhấn **Play** → Console hiện:
-   - `[GameManager] State: Intro → Intro` (hoặc tương tự)
+   - `[GameManager] State: Intro → Intro`
    - `[TileSpawner] Lead time = X.XXs ...`
-3. Nếu muốn test nhanh: trong GameManager Inspector, gọi `SetState(WaitingToStart)` qua context menu → Start Tile xuất hiện
+   - `[AudioManager] Playing music: ...` (khi chuyển sang Playing)
+3. Test flow cơ bản:
+   - Trong Inspector của GameManager, thay đổi state sang `WaitingToStart`
+   - Start Tile xuất hiện → tap vào → nhạc chạy, tiles bắt đầu rơi
+   - Hold tile khi vào Hit Zone → nhả ra → thấy "Good!" hoặc "PERFECT!"
+   - Miss tile → Game Over
+
+## 🎵 Chuẩn bị file nhạc
+
+1. Convert `MingleGame_Creative_playable.mid` → `.mp3` hoặc `.ogg`
+   - Dùng tool online hoặc DAW (Audacity, FL Studio...)
+   - Export ra file ~15-30 giây
+2. Import file vào `Assets/_Playable/Sprites/MP3/` (hoặc tạo folder `Audio`)
+3. Kéo vào `Music Clip` field của AudioManager

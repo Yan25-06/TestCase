@@ -128,12 +128,44 @@ public class OrientationManager : MonoBehaviour
     // ============================================================
 
     /// <summary>
-    /// Lấy vị trí X của lane có tính orientation
+    /// Lấy vị trí X của lane — tính động từ camera width chia đều thành laneCount phần.
+    /// Portrait: width = orthoSize * 2 * aspect (9:16 ratio)
+    /// Landscape: width = orthoSize * 2 * aspect (16:9 ratio)
+    /// → Lane centers tự khớp với background chia 4.
     /// </summary>
     public float GetLaneX(int laneIndex)
     {
-        if (gameConfig == null) return 0f;
-        return gameConfig.GetLaneX(laneIndex, IsLandscape);
+        if (mainCamera == null || gameConfig == null)
+        {
+            // Fallback khi chưa setup
+            return gameConfig != null
+                ? gameConfig.GetLaneX(laneIndex, IsLandscape)
+                : 0f;
+        }
+
+        int count = gameConfig.laneCount;
+        if (laneIndex < 0 || laneIndex >= count) return 0f;
+
+        // Camera half-width trong world units
+        float halfWidth = mainCamera.orthographicSize * mainCamera.aspect;
+        float totalWidth = halfWidth * 2f;
+        float laneWidth  = totalWidth / count;
+
+        // Center của lane = cạnh trái + (laneIndex + 0.5) * laneWidth
+        float laneCenter = -halfWidth + (laneIndex + 0.5f) * laneWidth;
+
+        return laneCenter;
+    }
+
+    /// <summary>
+    /// Chiều rộng mỗi lane trong world units
+    /// </summary>
+    public float GetLaneWidth()
+    {
+        if (mainCamera == null || gameConfig == null) return 1f;
+
+        float halfWidth = mainCamera.orthographicSize * mainCamera.aspect;
+        return (halfWidth * 2f) / gameConfig.laneCount;
     }
 
     /// <summary>

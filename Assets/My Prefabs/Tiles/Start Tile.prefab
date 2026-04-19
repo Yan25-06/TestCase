@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 3481054483027242246}
   - component: {fileID: -5227296097726723267}
   - component: {fileID: -9091723471443412224}
+  - component: {fileID: 6299483862535960639}
   m_Layer: 0
   m_Name: Start Tile
   m_TagString: Untagged
@@ -79,8 +80,8 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: 1456828887
+  m_SortingLayer: 4
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 321725882143191513, guid: 538b37e83ba0abd4b8c0ce81b7ff463b, type: 3}
@@ -154,8 +155,21 @@ MonoBehaviour:
   tileType: 0
   headRenderer: {fileID: 0}
   deadHeadSprite: {fileID: 0}
-  bodyRenderer: {fileID: 0}
-  bodyOriginalColor: {r: 0.9960785, g: 0.07450981, b: 0.5411765, a: 1}
-  bodyHoldColor: {r: 1, g: 0.85, b: 0, a: 1}
+  bodyRenderer: {fileID: 3481054483027242246}
+  bodyOriginalColor: {r: 1, g: 1, b: 1, a: 1}
+  bodyHoldColor: {r: 1, g: 0.8489583, b: 0, a: 1}
   tileState: 0
   laneIndex: 0
+--- !u!114 &6299483862535960639
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2903326170425981598}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5126505890b45924aabace1e2f25275e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StartPanelController
+  tileController: {fileID: -9091723471443412224}
