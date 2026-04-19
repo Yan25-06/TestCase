@@ -9,18 +9,29 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 13e231a8727ffd9439421ee98443de34, type: 3}
+  m_Script: {fileID: 11500000, guid: 2336fdc9fb2a740478da38668074d364, type: 3}
   m_Name: GameConfig
   m_EditorClassIdentifier: Assembly-CSharp::GameConfig
-  laneXPositions:
+  laneCount: 4
+  horizontalPadding: 0
+  fallbackLaneXPositions:
   - -1.5
   - -0.5
   - 0.5
   - 1.5
   baseScrollSpeed: 4
   speedIncreasePerScore: 0.03
-  spawnInterval: 0.35
-  spawnY: 7
-  missY: -7
+  spawnInterval: 1
+  spawnY: 13
+  missY: -10
   hitWindowTop: -3.1
   hitWindowBottom: -4.1
+  goodHitScore: 3
+  perfectHitScore: 6
+  portraitCameraSize: 8
+  landscapeCameraSize: 5
+  landscapeLaneScale: 1.5
+  beatmap:
+  - time: 0
+    type: 0
+    lane: 0
