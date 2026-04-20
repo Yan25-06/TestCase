@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 // ============================================================
 // StartPanelController.cs — Logic riêng cho Start Tile
@@ -6,8 +7,9 @@ using UnityEngine;
 // guid: c9bc85c6b91e31845965abaeb79d4803)
 //
 // Khi người chơi tap vào Start Tile → bắt đầu game
+// Dùng IPointerClickHandler (EventSystem) thay vì Physics2D.Raycast
 // ============================================================
-public class StartPanelController : MonoBehaviour
+public class StartPanelController : MonoBehaviour, IPointerClickHandler
 {
     [Header("=== References ===")]
     [Tooltip("TileController trên cùng GameObject (auto-get)")]
@@ -41,11 +43,13 @@ public class StartPanelController : MonoBehaviour
 
         // Ch\u1ec9 cho ph\u00e9p tap t\u1eeb Intro (nh\u1ea3y th\u1eb3ng Playing, b\u1ecf qua WaitingToStart)
         GameState state = GameManager.Instance.CurrentState;
-        if (state != GameState.Intro && state != GameState.WaitingToStart) return;
+        if (state != GameState.Intro) return;
 
         _tapped = true;
 
+#if UNITY_EDITOR
         Debug.Log($"[StartPanelController] Start Tile tapped from {state} \u2192 Playing");
+#endif
 
         // Chuy\u1ec3n game state \u2192 Playing (s\u1ebd trigger nh\u1ea1c + spawn)
         GameManager.Instance.SetState(GameState.Playing);
@@ -62,10 +66,14 @@ public class StartPanelController : MonoBehaviour
         }
     }
 
-    // ============================================================
-    // Detect tap bằng Unity 2D physics (backup)
-    // Nếu InputHandler không handle, dùng OnMouseDown
-    // ============================================================
+    // IPointerClickHandler: Unity EventSystem gọi khi có click/tap
+    // Cần: Physics2DRaycaster trên Camera và Collider2D trên tile
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        OnTap();
+    }
+
+    // OnMouseDown: fallback khi chạy trong Editor không có EventSystem
     private void OnMouseDown()
     {
         OnTap();

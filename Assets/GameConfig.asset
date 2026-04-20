@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: GameConfig
   m_EditorClassIdentifier: Assembly-CSharp::GameConfig
   laneCount: 4
-  musicStartDelay: 1.4
+  musicStartDelay: 1.5
   horizontalPadding: 0
   fallbackLaneXPositions:
   - -1.5
@@ -24,7 +24,7 @@ MonoBehaviour:
   speedIncreasePerScore: 0.01
   spawnInterval: 1
   spawnY: 8
-  missY: -10
+  missY: -12
   hitWindowTop: -3.1
   hitWindowBottom: -4.1
   goodHitScore: 3

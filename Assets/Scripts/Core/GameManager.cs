@@ -23,10 +23,6 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameConfig gameConfig;
     public GameConfig Config => gameConfig;
 
-    [Header("=== Intro ===")]
-    [Tooltip("Thời gian delay từ Intro → WaitingToStart (giây). Đặt 0 để skip Intro.")]
-    [SerializeField] private float introDelay = 0.5f;
-
     // ---- State ----
     private bool _initialized = false;
     private GameState _currentState = GameState.Intro;
@@ -84,25 +80,16 @@ public class GameManager : MonoBehaviour
         _currentState = newState;
         _initialized = true;
 
+#if UNITY_EDITOR
         Debug.Log($"[GameManager] State: {oldState} → {newState}");
+#endif
 
         // Xử lý logic riêng cho từng state
         switch (newState)
         {
             case GameState.Intro:
-                // Auto chuyển sang WaitingToStart sau introDelay
-                if (introDelay <= 0f)
-                    SetState(GameState.WaitingToStart);
-                else
-                    Invoke(nameof(TransitionToWaitingToStart), introDelay);
-                break;
-
-            case GameState.WaitingToStart:
-                // Reset score/combo khi chuẩn bị chơi
-                _score = 0;
-                _combo = 0;
-                OnScoreChanged?.Invoke(_score);
-                OnComboChanged?.Invoke(_combo);
+                // Giữ Intro cho đến khi người chơi tap Start Tile
+                // StartPanelController sẽ gọi SetState(Playing) khi tap
                 break;
 
             case GameState.Playing:
@@ -124,10 +111,6 @@ public class GameManager : MonoBehaviour
         OnGameStateChanged?.Invoke(oldState, newState);
     }
 
-    private void TransitionToWaitingToStart()
-    {
-        SetState(GameState.WaitingToStart);
-    }
 
     // ============================================================
     // SCORING
@@ -190,9 +173,6 @@ public class GameManager : MonoBehaviour
     // ============================================================
     // DEBUG — Click chuột phải vào component trong Inspector
     // ============================================================
-
-    [ContextMenu("Debug: Go to WaitingToStart")]
-    private void DebugWaitingToStart() => SetState(GameState.WaitingToStart);
 
     [ContextMenu("Debug: Go to Playing")]
     private void DebugPlaying() => SetState(GameState.Playing);

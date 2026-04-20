@@ -98,21 +98,6 @@ public class AudioManager : MonoBehaviour
         GameManager.OnGameStateChanged -= HandleGameStateChanged;
     }
 
-    private void Update()
-    {
-        // Kiểm tra nhạc đã hết → trigger song complete
-        if (musicSource != null && musicClip != null)
-        {
-            if (GameManager.Instance != null &&
-                GameManager.Instance.CurrentState == GameState.Playing &&
-                !musicSource.isPlaying &&
-                musicSource.time == 0f) // AudioSource reset time to 0 khi hết
-            {
-                // Nhạc kết thúc → đợi tiles xong rồi TileSpawner sẽ trigger
-                // Không trigger ở đây để tránh race condition
-            }
-        }
-    }
 
     // ============================================================
     // SETUP
@@ -187,12 +172,16 @@ public class AudioManager : MonoBehaviour
         if (delay > 0f)
         {
             musicSource.PlayDelayed(delay);
+#if UNITY_EDITOR
             Debug.Log($"[AudioManager] Playing music: {musicClip.name} in {delay}s, length={musicClip.length:F1}s");
+#endif
         }
         else
         {
             musicSource.Play();
+#if UNITY_EDITOR
             Debug.Log($"[AudioManager] Playing music: {musicClip.name}, length={musicClip.length:F1}s");
+#endif
         }
     }
 

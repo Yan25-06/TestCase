@@ -26,13 +26,6 @@ public class TileController : MonoBehaviour
     [Tooltip("SpriteRenderer của Body (kéo child Body vào đây)")]
     public SpriteRenderer bodyRenderer;
 
-    [Header("=== Colors ===")]
-    [Tooltip("Màu gốc của Body (hồng)")]
-    public Color bodyOriginalColor = new Color(1f, 0.5f, 0.6f, 1f); // hồng nhạt
-
-    [Tooltip("Màu khi đang hold (vàng)")]
-    public Color bodyHoldColor = new Color(1f, 0.85f, 0f, 1f); // vàng
-
     // ---- Runtime State ----
     [HideInInspector] public TileState tileState = TileState.Idle;
     [HideInInspector] public int laneIndex;
@@ -40,14 +33,21 @@ public class TileController : MonoBehaviour
     private float _scrollSpeed;
     private Sprite _originalHeadSprite;
     private GameConfig _config;
-    private Tween _colorTween;
     private bool _headSwapped = false; // true khi head đã đổi sang XX
+    private BoxCollider2D _collider; // cached — tránh GetComponent mỗi frame
+    private TileHoldEffect _holdEffect;  // fill-from-bottom effect component
 
     // ============================================================
     // LIFECYCLE
     // ============================================================
     private void Start()
     {
+        // Cache collider một lần duy nhất
+        _collider = GetComponent<BoxCollider2D>();
+
+        // Cache TileHoldEffect (gắn cùng root)
+        _holdEffect = GetComponent<TileHoldEffect>();
+
         // Auto-tìm bodyRenderer từ child "Body" nếu chưa assign trong Inspector
         if (bodyRenderer == null)
         {
@@ -74,10 +74,6 @@ public class TileController : MonoBehaviour
         // Lưu sprite gốc của head để reset khi recycle
         if (headRenderer != null)
             _originalHeadSprite = headRenderer.sprite;
-
-        // Reset body color
-        if (bodyRenderer != null)
-            bodyRenderer.color = bodyOriginalColor;
 
         // Đặt vị trí spawn
         float x = OrientationManager.Instance != null
@@ -128,13 +124,20 @@ public class TileController : MonoBehaviour
 
         float tileBottomY = GetBottomY();
         float headY = GetHeadY();
+        
+        // Tính toán cạnh dưới của màn hình dựa vào Camera (linh hoạt theo thiết bị)
+        float screenBottomY = -10f;
+        if (Camera.main != null)
+        {
+            screenBottomY = Camera.main.transform.position.y - Camera.main.orthographicSize;
+        }
+
         if (_config != null)
         {
             if (tileState == TileState.Completed || tileState == TileState.Missed)
             {
-                // Tile đã được xử lý → tiếp tục rơi xuống
-                // Chỉ trả về pool khi HEAD hoàn toàn ra khỏi màn hình
-                if (headY < _config.missY)
+                // Trả về pool khi TOÀN BỘ tile (headY) đã rơi khỏi màn hình hoàn toàn
+                if (headY < screenBottomY - 1.5f)
                 {
                     if (TilePool.Instance != null)
                         TilePool.Instance.Return(this);
@@ -157,8 +160,10 @@ public class TileController : MonoBehaviour
             }
 
             // Kiểm tra tile bị miss (trôi qua màn hình mà chưa được hit)
-            // Vẫn dùng bottomY để trigger GameOver ngay khi đủ tầm
-            if (tileBottomY < _config.missY)
+            // Linh hoạt theo chiều dài: Đợi đỉnh của tile (headY) tụt hẳn dưới màn hình mới báo Miss.
+            // (hoặc nếu là Long Tile, bạn có thể kiểm tra tileBottomY < hitWindowBottom nếu muốn báo Miss sớm)
+            // Ở đây ta dùng headY < screenBottomY để tile kịp trôi hết khỏi màn hình.
+            if (headY < screenBottomY)
             {
                 OnMissed();
             }
@@ -180,7 +185,9 @@ public class TileController : MonoBehaviour
             if (deadHeadSprite != null)
                 headRenderer.sprite = deadHeadSprite;
 
+#if UNITY_EDITOR
             Debug.Log($"[TileController] Head swapped to XX! Lane {laneIndex}");
+#endif
         }
     }
 
@@ -198,13 +205,10 @@ public class TileController : MonoBehaviour
 
         tileState = TileState.Holding;
 
-        // Bắt đầu chuyển màu body Hồng → Vàng
-        if (bodyRenderer != null)
+        // Kích hoạt hiệu ứng fill từ dưới lên (nếu có TileHoldEffect gắn trên tile)
+        if (_holdEffect != null)
         {
-            _colorTween?.Kill();
-            float duration = tileType == TileType.Long ? 1.5f : 0.5f;
-            _colorTween = bodyRenderer.DOColor(bodyHoldColor, duration)
-                .SetEase(Ease.Linear);
+            _holdEffect.StartHold();
         }
     }
 
@@ -214,7 +218,9 @@ public class TileController : MonoBehaviour
     /// </summary>
     public HitResult OnHoldRelease()
     {
-        _colorTween?.Kill();
+        // Dừng animation, giữ nguyên vị trí màu vàng hiện tại
+        if (_holdEffect != null && !_holdEffect.IsComplete)
+            _holdEffect.PauseHold();
 
         if (tileState != TileState.Holding)
             return HitResult.None;
@@ -223,7 +229,7 @@ public class TileController : MonoBehaviour
 
         if (_headSwapped)
         {
-            // Head đã được swap trong Update() → PERFECT
+            // Head đã được swap → PERFECT
             return HitResult.Perfect;
         }
         else
@@ -234,19 +240,38 @@ public class TileController : MonoBehaviour
     }
 
     /// <summary>
+    /// Callback từ TileHoldEffect khi fill đã lấp đầy 100%.
+    /// Đổi head sang sprite XX ngay lập tức.
+    /// </summary>
+    public void OnFillComplete()
+    {
+        if (headRenderer != null && deadHeadSprite != null && !_headSwapped)
+        {
+            _headSwapped = true;
+            headRenderer.sprite = deadHeadSprite;
+        }
+
+#if UNITY_EDITOR
+        Debug.Log($"[TileController] OnFillComplete → head swapped to XX. Lane {laneIndex}");
+#endif
+    }
+
+    /// <summary>
     /// Tile bị miss — trigger Game Over
     /// </summary>
     private void OnMissed()
     {
         tileState = TileState.Missed;
-        Debug.Log($"[TileController] Tile missed on lane {laneIndex} (GameOver disabled for testing)");
+#if UNITY_EDITOR
+        Debug.Log($"[TileController] Tile missed on lane {laneIndex}");
+#endif
 
-        // if (GameManager.Instance != null)
-        //     GameManager.Instance.TriggerGameOver();
+        if (GameManager.Instance != null)
+            GameManager.Instance.TriggerGameOver();
 
         // Tự động thu hồi tile về pool để không bị "rác" màn hình khi test
-        if (TilePool.Instance != null)
-            TilePool.Instance.Return(this);
+        // if (TilePool.Instance != null)
+        //     TilePool.Instance.Return(this);
     }
 
     // ============================================================
@@ -285,14 +310,16 @@ public class TileController : MonoBehaviour
     public void ResetTile()
     {
         tileState = TileState.Idle;
-        _colorTween?.Kill();
         _headSwapped = false;
+
+        // Reset fill effect hoàn toàn (trả pool)
+        if (_holdEffect != null)
+            _holdEffect.ResetFill();
 
         // Reset visuals
         transform.localScale = Vector3.one;
         if (bodyRenderer != null)
         {
-            bodyRenderer.color = bodyOriginalColor;
             var c = bodyRenderer.color; c.a = 1f; bodyRenderer.color = c;
         }
         if (headRenderer != null)
@@ -314,10 +341,9 @@ public class TileController : MonoBehaviour
     /// </summary>
     private float GetBottomY()
     {
-        // Dùng BoxCollider2D bounds nếu có
-        var col = GetComponent<BoxCollider2D>();
-        if (col != null)
-            return col.bounds.min.y;
+        // Dùng cached _collider thay vì GetComponent mỗi frame
+        if (_collider != null)
+            return _collider.bounds.min.y;
 
         // Fallback: dùng transform.position
         return transform.position.y;

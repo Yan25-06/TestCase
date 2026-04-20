@@ -19,7 +19,9 @@ public class UIManager : MonoBehaviour
 
     [Header("=== Ingame UI ===")]
     [SerializeField] private TextMeshProUGUI scoreText;
-    [SerializeField] private TextMeshProUGUI comboText;
+
+    [Tooltip("Text hiển thị Good/PERFECT (cũ là comboText trên Canvas)")]
+    [SerializeField] private TextMeshProUGUI hitResultText;
 
     [Header("=== Game Over ===")]
     [Tooltip("Delay (giây) trước khi chuyển sang CTA sau khi thua")]
@@ -48,14 +50,12 @@ public class UIManager : MonoBehaviour
     {
         GameManager.OnGameStateChanged += HandleGameStateChanged;
         GameManager.OnScoreChanged += UpdateScore;
-        GameManager.OnComboChanged += UpdateCombo;
     }
 
     private void OnDisable()
     {
         GameManager.OnGameStateChanged -= HandleGameStateChanged;
         GameManager.OnScoreChanged -= UpdateScore;
-        GameManager.OnComboChanged -= UpdateCombo;
     }
 
     // ============================================================
@@ -68,22 +68,28 @@ public class UIManager : MonoBehaviour
             case GameState.Intro:
                 ShowPanel(introPanel);
                 AnimateIntro();
-                break;
-
-            case GameState.WaitingToStart:
-                ShowPanel(ingamePanel);
-                AnimateHandPointing();
+                AnimateHandPointing(); // Hiệu ứng bàn tay phải được gọi ở Intro
                 break;
 
             case GameState.Playing:
                 ShowPanel(ingamePanel);
                 HideHandPointing();
+                // Reset hit result text khi bắt đầu chơi
+                if (hitResultText != null)
+                {
+                    hitResultText.text = "";
+                    hitResultText.gameObject.SetActive(false);
+                }
                 break;
 
             case GameState.GameOver:
                 // Không có game over panel — chỉ delay rồi chuyển thẳng sang CTA
-                // BGEC background được OrientationManager bật khi GameOver
-                Invoke(nameof(TransitionToCTA), gameOverToCTADelay);
+                // Dùng DOTween thay vì Invoke — không dùng string reflection
+                DOVirtual.DelayedCall(gameOverToCTADelay, () =>
+                {
+                    if (GameManager.Instance != null)
+                        GameManager.Instance.SetState(GameState.CTA);
+                });
                 break;
 
             case GameState.CTA:
@@ -132,9 +138,9 @@ public class UIManager : MonoBehaviour
 
         handPointing.gameObject.SetActive(true);
 
-        // Animation bob up-down liên tục
-        handPointing.transform.DOLocalMoveY(
-            handPointing.transform.localPosition.y + 30f, 0.5f)
+        // Animation di chuyển chéo (lên trên, sang trái) liên tục
+        Vector3 targetPos = handPointing.transform.localPosition + new Vector3(-40f, 40f, 0f);
+        handPointing.transform.DOLocalMove(targetPos, 0.5f)
             .SetLoops(-1, LoopType.Yoyo)
             .SetEase(Ease.InOutSine);
     }
@@ -161,32 +167,40 @@ public class UIManager : MonoBehaviour
             scoreText.text = newScore.ToString();
     }
 
-    private void UpdateCombo(int newCombo)
+    // ============================================================
+    // HIT RESULT TEXT (thay thế combo text)
+    // ============================================================
+
+    [Header("=== Hit Result Colors ===")]
+    [SerializeField] private Color goodColor    = new Color(0.2f, 0.95f, 0.3f, 1f);  // xanh lá
+    [SerializeField] private Color perfectColor = new Color(1f,   0.85f, 0f,   1f);  // vàng gold
+
+    /// <summary>
+    /// Cập nhật text Good / PERFECT ngay tại chỗ (không bay lên).
+    /// Gọi bởi ScoreManager.ShowHitFeedback().
+    /// </summary>
+    public void ShowHitResultText(HitResult result)
     {
-        if (comboText == null) return;
+        if (hitResultText == null) return;
 
-        if (newCombo > 1)
-        {
-            comboText.gameObject.SetActive(true);
-            comboText.text = $"x{newCombo}";
+        hitResultText.gameObject.SetActive(true);
+        hitResultText.transform.DOKill();
+        hitResultText.transform.localScale = Vector3.one;
 
-            // Punch scale trên mỗi combo mới
-            comboText.transform.DOKill();
-            comboText.transform.localScale = Vector3.one;
-            comboText.transform.DOPunchScale(Vector3.one * 0.3f, 0.2f);
-        }
-        else
+        switch (result)
         {
-            comboText.gameObject.SetActive(false);
+            case HitResult.Perfect:
+                hitResultText.text  = "PERFECT!";
+                hitResultText.color = perfectColor;
+                hitResultText.transform.DOPunchScale(Vector3.one * 0.4f, 0.25f, 6, 0.5f);
+                break;
+
+            case HitResult.Good:
+                hitResultText.text  = "Good!";
+                hitResultText.color = goodColor;
+                hitResultText.transform.DOPunchScale(Vector3.one * 0.2f, 0.2f, 5, 0.5f);
+                break;
         }
     }
 
-    // ============================================================
-    // GAME OVER
-    // ============================================================
-    private void TransitionToCTA()
-    {
-        if (GameManager.Instance != null)
-            GameManager.Instance.SetState(GameState.CTA);
-    }
 }

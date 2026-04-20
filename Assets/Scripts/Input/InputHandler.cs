@@ -32,6 +32,8 @@ public class InputHandler : MonoBehaviour
     // Value: TileController đang được hold
     private Dictionary<int, TileController> _activeHolds = new Dictionary<int, TileController>();
 
+    private float _playStartTime;
+
     // ============================================================
     // LIFECYCLE
     // ============================================================
@@ -53,6 +55,7 @@ public class InputHandler : MonoBehaviour
         EnhancedTouchSupport.Enable();
         Touch.onFingerDown += OnFingerDown;
         Touch.onFingerUp += OnFingerUp;
+        GameManager.OnGameStateChanged += HandleGameStateChanged;
     }
 
     private void OnDisable()
@@ -60,6 +63,15 @@ public class InputHandler : MonoBehaviour
         Touch.onFingerDown -= OnFingerDown;
         Touch.onFingerUp -= OnFingerUp;
         EnhancedTouchSupport.Disable();
+        GameManager.OnGameStateChanged -= HandleGameStateChanged;
+    }
+
+    private void HandleGameStateChanged(GameState oldState, GameState newState)
+    {
+        if (newState == GameState.Playing)
+        {
+            _playStartTime = Time.time;
+        }
     }
 
     private void Update()
@@ -68,8 +80,8 @@ public class InputHandler : MonoBehaviour
 
         GameState state = GameManager.Instance.CurrentState;
 
-        // Chỉ xử lý input khi WaitingToStart hoặc Playing
-        if (state != GameState.WaitingToStart && state != GameState.Playing)
+        // Chỉ xử lý input khi Playing
+        if (state != GameState.Playing)
             return;
 
         // Mouse input (Desktop / Editor) — dùng New Input System Mouse device
@@ -84,7 +96,7 @@ public class InputHandler : MonoBehaviour
         if (GameManager.Instance == null) return;
 
         GameState state = GameManager.Instance.CurrentState;
-        if (state != GameState.WaitingToStart && state != GameState.Playing)
+        if (state != GameState.Playing)
             return;
 
         Vector2 screenPos = finger.screenPosition;
@@ -130,15 +142,13 @@ public class InputHandler : MonoBehaviour
     /// </summary>
     private void OnPointerDown(int pointerId, Vector2 screenPos)
     {
-        // Nếu đang WaitingToStart → check Start Tile
-        if (GameManager.Instance.CurrentState == GameState.WaitingToStart)
-        {
-            TryTapStartTile(screenPos);
-            return;
-        }
-
-        // Đang Playing → xử lý hold tile
+        // Chỉ xử lý khi Playing
         if (GameManager.Instance.CurrentState != GameState.Playing)
+            return;
+
+        // Bỏ qua input trong 0.1s đầu tiên sau khi start game
+        // để tránh race condition (tap Start Tile bị tính là tap nhầm lane)
+        if (Time.time - _playStartTime < 0.1f)
             return;
 
         // Convert screen → world
@@ -157,7 +167,15 @@ public class InputHandler : MonoBehaviour
             tile.OnHoldStart();
             _activeHolds[pointerId] = tile;
         }
-        // Không tìm thấy tile → bỏ qua (forgiving, theo GDD)
+        else
+        {
+            // Lane trống — bấm nhầm → chớp đỏ cảnh báo rồi Game Over
+            if (LaneFlashEffect.Instance != null)
+                LaneFlashEffect.Instance.FlashLane(lane);
+
+            if (GameManager.Instance != null)
+                GameManager.Instance.TriggerGameOver();
+        }
     }
 
     /// <summary>
@@ -206,14 +224,9 @@ public class InputHandler : MonoBehaviour
         if (ScoreManager.Instance != null)
             ScoreManager.Instance.ShowHitFeedback(HitResult.Good, tile.transform.position);
 
-        // SFX
-        if (AudioManager.Instance != null)
-            AudioManager.Instance.PlaySFX(SFXType.GoodHit);
-
-        // Tile tiếp tục rơi xuống và tự động trả pool khi ra khỏi màn hình
-        // (xử lý bởi TileController.Update() khi tileState == Completed)
-
+#if UNITY_EDITOR
         Debug.Log($"[InputHandler] GOOD HIT! Lane {tile.laneIndex}, +{gameConfig.goodHitScore}");
+#endif
     }
 
     private void OnPerfectHit(TileController tile)
@@ -227,39 +240,11 @@ public class InputHandler : MonoBehaviour
         if (ScoreManager.Instance != null)
             ScoreManager.Instance.ShowHitFeedback(HitResult.Perfect, tile.transform.position);
 
-        // SFX
-        if (AudioManager.Instance != null)
-            AudioManager.Instance.PlaySFX(SFXType.PerfectHit);
-
-        // Tile tiếp tục rơi xuống và tự động trả pool khi ra khỏi màn hình
-        // (Head đã được đổi sang sprite XX trong TileController.OnHoldRelease())
-
+#if UNITY_EDITOR
         Debug.Log($"[InputHandler] PERFECT HIT! Lane {tile.laneIndex}, +{gameConfig.perfectHitScore}");
+#endif
     }
 
-    // ============================================================
-    // START TILE
-    // ============================================================
-
-    /// <summary>
-    /// Khi đang WaitingToStart, check nếu tap trúng Start Tile
-    /// </summary>
-    private void TryTapStartTile(Vector2 screenPos)
-    {
-        Vector3 worldPos = mainCamera.ScreenToWorldPoint(screenPos);
-        worldPos.z = 0f;
-
-        // Raycast 2D để tìm Start Tile
-        RaycastHit2D hit = Physics2D.Raycast(worldPos, Vector2.zero);
-        if (hit.collider != null)
-        {
-            StartPanelController startPanel = hit.collider.GetComponent<StartPanelController>();
-            if (startPanel != null)
-            {
-                startPanel.OnTap();
-            }
-        }
-    }
 
     // ============================================================
     // LANE DETECTION
@@ -307,20 +292,28 @@ public class InputHandler : MonoBehaviour
     // ============================================================
 
     /// <summary>
-    /// Tìm tile thích hợp nhất trên lane để interact.
-    /// Ưu tiên: InHitZone > Scrolling (gần zone nhất)
+    /// Tìm tile thích hợp nhất trên lane để interact — single pass.
     /// </summary>
     private TileController FindTileForInteraction(int lane)
     {
-        if (TilePool.Instance == null) return null;
-
-        // Ưu tiên 1: Tile đang ở trong Hit Zone
-        TileController inZone = TilePool.Instance.GetTileInHitZone(lane);
-        if (inZone != null) return inZone;
-
-        // Ưu tiên 2: Tile scrolling thấp nhất (sắp vào zone)
-        TileController lowest = TilePool.Instance.GetLowestScrollingTile(lane);
-        return lowest;
+        if (TilePool.Instance == null || GameManager.Instance == null) return null;
+        
+        TileController tile = TilePool.Instance.FindTileForLane(lane);
+        
+        if (tile != null && tile.tileState == TileState.Scrolling)
+        {
+            // Khoảng cách cho phép bấm sớm (forgiving window)
+            // Nếu tile còn cao hơn mức này thì coi như bấm vào khoảng trống
+            float forgivingTopY = GameManager.Instance.Config.hitWindowTop + 2.5f;
+            
+            if (tile.transform.position.y > forgivingTopY)
+            {
+                // Tile ở quá cao, chưa được phép bấm
+                return null;
+            }
+        }
+        
+        return tile;
     }
 
     // ============================================================

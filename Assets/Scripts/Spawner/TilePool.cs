@@ -204,4 +204,36 @@ public class TilePool : MonoBehaviour
         }
         return lowest;
     }
+
+    /// <summary>
+    /// Single-pass: tìm tile tốt nhất để interact trên lane.
+    /// Ưu tiên InHitZone/Holding, fallback Scrolling thấp nhất.
+    /// Gọn hơn 2 vòng lặp riêng biệt.
+    /// </summary>
+    public TileController FindTileForLane(int lane)
+    {
+        TileController fallback = null;
+        float lowestY = float.MaxValue;
+
+        foreach (var tile in _activeTiles)
+        {
+            if (tile.laneIndex != lane) continue;
+
+            // Ưu tiên 1: đang trong Hit Zone — trả luôn, không cần xét tiếp
+            if (tile.tileState == TileState.InHitZone || tile.tileState == TileState.Holding)
+                return tile;
+
+            // Ưu tiên 2: Scrolling thấp nhất (sắp vào zone)
+            if (tile.tileState == TileState.Scrolling)
+            {
+                float y = tile.transform.position.y;
+                if (y < lowestY)
+                {
+                    lowestY = y;
+                    fallback = tile;
+                }
+            }
+        }
+        return fallback;
+    }
 }

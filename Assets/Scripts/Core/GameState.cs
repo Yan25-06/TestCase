@@ -3,11 +3,10 @@
 // ============================================================
 public enum GameState
 {
-    Intro,           // Màn hình intro / splash
-    WaitingToStart,  // Hiển thị Start Tile, chờ tap
-    Playing,         // Gameplay đang diễn ra
-    GameOver,        // Người chơi miss tile
-    CTA              // Màn hình Call-To-Action
+    Intro,    // Màn hình intro / splash
+    Playing,  // Gameplay đang diễn ra
+    GameOver, // Người chơi miss tile
+    CTA       // Màn hình Call-To-Action
 }
 
 // ============================================================

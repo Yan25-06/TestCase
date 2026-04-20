@@ -159,7 +159,6 @@ Assets/Scripts/
 - **Hit Zone Indicator**: Vùng bấm visual ở dưới màn hình, anchor Bottom-Stretch
   - Highlight khi có Tile tiến vào zone
 - **Floating Score Text**: "+3 Good!" / "+6 PERFECT!"
-  - Spawn tại vị trí Tile (world → screen coords), bay lên + fade out (DOTween)
 - **Combo Counter** (tùy chọn): Hiển thị streak
 
 #### Task 2.3: Game Over & CTA Screen (~1.5h)
@@ -170,7 +169,6 @@ Assets/Scripts/
   - Background EC: 2 sprite (9x16 + 16x9), `OrientationManager` swap
   - Headline EC + Nút Download/CTA: anchor center, auto scale
   - Game Info panel
-  - Animation bắt mắt: pulse, glow effect trên nút CTA
   - `Application.OpenURL()` khi nhấn nút
 
 ---
@@ -183,8 +181,6 @@ Assets/Scripts/
   - Good Hit: Tile fade out nhẹ nhàng
 - **Screen Shake** nhẹ khi Perfect (DOTween `DOShakePosition`)
 - **Color Transition** mượt mà Hồng → Vàng trên body tile
-- **Parallax background** nhẹ (nếu kịp)
-- **Hit Zone glow** animation loop
 
 #### Task 2.5: Gameplay Tuning & Balancing (~1h)
 - Điều chỉnh `GameConfig`:

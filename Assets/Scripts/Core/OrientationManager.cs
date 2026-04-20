@@ -44,6 +44,10 @@ public class OrientationManager : MonoBehaviour
     private int _lastScreenWidth;
     private int _lastScreenHeight;
 
+    // Throttle: chỉ check orientation mỗi N giây (không cần check mỗi frame)
+    private const float CheckInterval = 0.5f;
+    private float _checkTimer;
+
     // ============================================================
     // LIFECYCLE
     // ============================================================
@@ -80,7 +84,12 @@ public class OrientationManager : MonoBehaviour
 
     private void Update()
     {
-        // Chỉ check khi resolution thay đổi (tối ưu)
+        // Throttle: chỉ chạy mỗi 0.5s — thiết bị không xoay liên tục
+        _checkTimer += Time.unscaledDeltaTime;
+        if (_checkTimer < CheckInterval) return;
+        _checkTimer = 0f;
+
+        // Chỉ check khi resolution thay đổi
         if (Screen.width != _lastScreenWidth || Screen.height != _lastScreenHeight)
         {
             _lastScreenWidth = Screen.width;
@@ -109,7 +118,6 @@ public class OrientationManager : MonoBehaviour
                 break;
 
             case GameState.Intro:
-            case GameState.WaitingToStart:
             case GameState.Playing:
             case GameState.GameOver:
                 // Giữ Ingame background (GameOver vẫn thấy ingame BG trong 1.5s)
