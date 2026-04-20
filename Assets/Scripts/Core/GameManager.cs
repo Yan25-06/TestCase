@@ -39,7 +39,13 @@ public class GameManager : MonoBehaviour
     public int Combo => _combo;
 
     private float _musicStartTime;
-    /// <summary>Thời gian (seconds) kể từ lúc nhạc bắt đầu phát</summary>
+    private bool _musicScheduled = false;
+
+    /// <summary>
+    /// Thời gian (seconds) kể từ lúc game bắt đầu Playing.
+    /// Âm trong khoảng musicStartDelay đầu tiên (countdown),
+    /// rồi tăng dần song song với nhạc.
+    /// </summary>
     public float MusicElapsed => Time.time - _musicStartTime;
 
     // ============================================================
@@ -100,7 +106,11 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameState.Playing:
-                _musicStartTime = Time.time;
+                float delay = gameConfig != null ? gameConfig.musicStartDelay : 0f;
+                // MusicElapsed bắt đầu từ -delay (countdown), đến 0 nhạc mới phát
+                _musicStartTime = Time.time + delay;
+                _musicScheduled = false;
+                // Việc phát nhạc thực sự sẽ do AudioManager lo (nghe event GameStateChanged)
                 break;
 
             case GameState.GameOver:

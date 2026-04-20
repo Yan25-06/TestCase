@@ -188,7 +188,7 @@ MonoBehaviour:
   headRenderer: {fileID: 8351363546147727426}
   deadHeadSprite: {fileID: 7450599205057120761, guid: 33bc72d1fb682c646929c34c6fffb87e, type: 3}
   bodyRenderer: {fileID: 59563462772774827}
-  bodyOriginalColor: {r: 1, g: 1, b: 1, a: 1}
+  bodyOriginalColor: {r: 1, g: 0, b: 0.5063832, a: 1}
   bodyHoldColor: {r: 1, g: 0.8489583, b: 0, a: 1}
   tileState: 0
   laneIndex: 0

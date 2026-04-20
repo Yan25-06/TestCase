@@ -107,8 +107,8 @@ public class TileSpawner : MonoBehaviour
     {
         switch (newState)
         {
-            case GameState.WaitingToStart:
-                SpawnStartTile();
+            case GameState.Intro:
+                SpawnStartTile(); // Start Tile xuất hiện ngay từ Intro
                 break;
 
             case GameState.Playing:
@@ -137,16 +137,45 @@ public class TileSpawner : MonoBehaviour
         TileController startTile = TilePool.Instance.Get(TileType.Start);
         if (startTile != null)
         {
-            // Start tile đặt ở giữa, tại vị trí cố định
-            float centerX = 0f;
+            // Start tile đặt tại lane thứ 3 (index 2, 0-based)
+            const int startLane = 2;
+
+            float laneX = OrientationManager.Instance != null
+                ? OrientationManager.Instance.GetLaneX(startLane)
+                : (gameConfig != null ? gameConfig.fallbackLaneXPositions[startLane] : 0f);
+
             float centerY = gameConfig != null ? (gameConfig.hitWindowTop + 2f) : 0f;
 
-            startTile.transform.position = new Vector3(centerX, centerY, 0f);
+            startTile.transform.position = new Vector3(laneX, centerY, 0f);
+
+            // Scale tile vừa khít 1 lane (giống cách Init() làm cho tile thường)
+            if (OrientationManager.Instance != null)
+            {
+                float laneWidth   = OrientationManager.Instance.GetLaneWidth();
+                float padding     = gameConfig != null ? gameConfig.horizontalPadding : 0f;
+                float targetWidth = laneWidth - (padding * 2f);
+
+                // Tìm sprite đại diện (body ưu tiên, fallback sang head)
+                SpriteRenderer sr = startTile.bodyRenderer != null ? startTile.bodyRenderer
+                                  : startTile.headRenderer;
+
+                if (sr != null && sr.sprite != null)
+                {
+                    float spriteWidth = sr.sprite.bounds.size.x;
+                    if (spriteWidth > 0f)
+                    {
+                        float scaleX = targetWidth / spriteWidth;
+                        startTile.transform.localScale = new Vector3(scaleX, scaleX, 1f);
+                    }
+                }
+            }
+
+            startTile.laneIndex = startLane;
             startTile.tileState = TileState.InHitZone; // Sẵn sàng để tap
             startTile.gameObject.SetActive(true);
 
             _startTileSpawned = true;
-            Debug.Log("[TileSpawner] Start Tile spawned");
+            Debug.Log($"[TileSpawner] Start Tile spawned at lane {startLane} (x={laneX:F2})");
         }
     }
 

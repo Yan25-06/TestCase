@@ -177,9 +177,23 @@ public class AudioManager : MonoBehaviour
 
         musicSource.clip = musicClip;
         musicSource.time = 0f;
-        musicSource.Play();
 
-        Debug.Log($"[AudioManager] Playing music: {musicClip.name}, length={musicClip.length:F1}s");
+        float delay = 0f;
+        if (GameManager.Instance != null && GameManager.Instance.Config != null)
+        {
+            delay = GameManager.Instance.Config.musicStartDelay;
+        }
+
+        if (delay > 0f)
+        {
+            musicSource.PlayDelayed(delay);
+            Debug.Log($"[AudioManager] Playing music: {musicClip.name} in {delay}s, length={musicClip.length:F1}s");
+        }
+        else
+        {
+            musicSource.Play();
+            Debug.Log($"[AudioManager] Playing music: {musicClip.name}, length={musicClip.length:F1}s");
+        }
     }
 
     /// <summary>

@@ -87,6 +87,24 @@ public class TileController : MonoBehaviour
         float y = config != null ? config.spawnY : 13f;
 
         transform.position = new Vector3(x, y, 0f);
+
+        // Tự động scale tile cho vừa với độ rộng của Lane
+        if (OrientationManager.Instance != null && bodyRenderer != null && bodyRenderer.sprite != null)
+        {
+            float laneWidth = OrientationManager.Instance.GetLaneWidth();
+            float padding = config != null ? config.horizontalPadding : 0f;
+            float targetWidth = laneWidth - (padding * 2f);
+
+            float spriteWidth = bodyRenderer.sprite.bounds.size.x;
+            if (spriteWidth > 0f)
+            {
+                float scaleX = targetWidth / spriteWidth;
+                
+                // Áp dụng uniform scale để tránh làm méo ảnh (đặc biệt là phần Head)
+                transform.localScale = new Vector3(scaleX, scaleX, 1f);
+            }
+        }
+
         gameObject.SetActive(true);
     }
 
@@ -109,13 +127,14 @@ public class TileController : MonoBehaviour
         transform.Translate(Vector3.down * _scrollSpeed * Time.deltaTime);
 
         float tileBottomY = GetBottomY();
+        float headY = GetHeadY();
         if (_config != null)
         {
-            if (tileState == TileState.Completed)
+            if (tileState == TileState.Completed || tileState == TileState.Missed)
             {
-                // Tile đã được xử lý (Good/Perfect) → tiếp tục rơi xuống
-                // Khi ra khỏi màn hình → silently trả về pool
-                if (tileBottomY < _config.missY)
+                // Tile đã được xử lý → tiếp tục rơi xuống
+                // Chỉ trả về pool khi HEAD hoàn toàn ra khỏi màn hình
+                if (headY < _config.missY)
                 {
                     if (TilePool.Instance != null)
                         TilePool.Instance.Return(this);
@@ -138,6 +157,7 @@ public class TileController : MonoBehaviour
             }
 
             // Kiểm tra tile bị miss (trôi qua màn hình mà chưa được hit)
+            // Vẫn dùng bottomY để trigger GameOver ngay khi đủ tầm
             if (tileBottomY < _config.missY)
             {
                 OnMissed();
@@ -219,9 +239,14 @@ public class TileController : MonoBehaviour
     private void OnMissed()
     {
         tileState = TileState.Missed;
+        Debug.Log($"[TileController] Tile missed on lane {laneIndex} (GameOver disabled for testing)");
 
-        if (GameManager.Instance != null)
-            GameManager.Instance.TriggerGameOver();
+        // if (GameManager.Instance != null)
+        //     GameManager.Instance.TriggerGameOver();
+
+        // Tự động thu hồi tile về pool để không bị "rác" màn hình khi test
+        if (TilePool.Instance != null)
+            TilePool.Instance.Return(this);
     }
 
     // ============================================================

@@ -39,6 +39,8 @@ public class OrientationManager : MonoBehaviour
     public bool IsPortrait => _isPortrait;
     public bool IsLandscape => !_isPortrait;
 
+    private bool _showingCTABg = false; // true khi đang hiện BGEC (GameOver/CTA)
+
     private int _lastScreenWidth;
     private int _lastScreenHeight;
 
@@ -66,6 +68,16 @@ public class OrientationManager : MonoBehaviour
         ApplyOrientation();
     }
 
+    private void OnEnable()
+    {
+        GameManager.OnGameStateChanged += HandleGameStateChanged;
+    }
+
+    private void OnDisable()
+    {
+        GameManager.OnGameStateChanged -= HandleGameStateChanged;
+    }
+
     private void Update()
     {
         // Chỉ check khi resolution thay đổi (tối ưu)
@@ -81,6 +93,28 @@ public class OrientationManager : MonoBehaviour
                 ApplyOrientation();
                 OnOrientationChanged?.Invoke(_isPortrait);
             }
+        }
+    }
+
+    // ============================================================
+    // GAME STATE — Switch background set
+    // ============================================================
+    private void HandleGameStateChanged(GameState oldState, GameState newState)
+    {
+        switch (newState)
+        {
+            case GameState.CTA:
+                // Chỉ khi vào CTA mới chuyển sang BGEC
+                SwitchToBackground(useCTA: true);
+                break;
+
+            case GameState.Intro:
+            case GameState.WaitingToStart:
+            case GameState.Playing:
+            case GameState.GameOver:
+                // Giữ Ingame background (GameOver vẫn thấy ingame BG trong 1.5s)
+                SwitchToBackground(useCTA: false);
+                break;
         }
     }
 
@@ -106,21 +140,26 @@ public class OrientationManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Enable/disable background sprites theo orientation
+    /// Enable/disable background sprites theo orientation VÀ game state.
+    /// Ingame BG: Intro / WaitingToStart / Playing
+    /// CTA BG:    GameOver / CTA
     /// </summary>
     private void ApplyBackgrounds()
     {
-        // Ingame backgrounds
-        if (bgIngamePortrait != null)
-            bgIngamePortrait.enabled = _isPortrait;
-        if (bgIngameLandscape != null)
-            bgIngameLandscape.enabled = !_isPortrait;
+        bool showIngame = !_showingCTABg;
+        bool showCTA    = _showingCTABg;
 
-        // CTA backgrounds
+        // Ingame backgrounds (chỉ hiện khi showIngame và đúng orientation)
+        if (bgIngamePortrait != null)
+            bgIngamePortrait.enabled  = showIngame && _isPortrait;
+        if (bgIngameLandscape != null)
+            bgIngameLandscape.enabled = showIngame && !_isPortrait;
+
+        // CTA backgrounds (BGEC_Squid_Game_9x16 / 16x9)
         if (bgCTAPortrait != null)
-            bgCTAPortrait.enabled = _isPortrait;
+            bgCTAPortrait.enabled  = showCTA && _isPortrait;
         if (bgCTALandscape != null)
-            bgCTALandscape.enabled = !_isPortrait;
+            bgCTALandscape.enabled = showCTA && !_isPortrait;
     }
 
     // ============================================================
@@ -128,10 +167,51 @@ public class OrientationManager : MonoBehaviour
     // ============================================================
 
     /// <summary>
-    /// Lấy vị trí X của lane — tính động từ camera width chia đều thành laneCount phần.
-    /// Portrait: width = orthoSize * 2 * aspect (9:16 ratio)
-    /// Landscape: width = orthoSize * 2 * aspect (16:9 ratio)
-    /// → Lane centers tự khớp với background chia 4.
+    /// Chuyển sang bộ background tương ứng với game state.
+    /// useCTA = true  → BGEC_Squid_Game (GameOver / CTA screen)
+    /// useCTA = false → Ingame background (Playing)
+    /// Portrait/Landscape swap vẫn được giữ nguyên.
+    /// </summary>
+    public void SwitchToBackground(bool useCTA)
+    {
+        _showingCTABg = useCTA;
+        ApplyBackgrounds();
+
+        Debug.Log($"[OrientationManager] Background → {(useCTA ? "CTA (BGEC)" : "Ingame")}, portrait={_isPortrait}");
+    }
+
+    /// <summary>
+    /// Lấy độ rộng có thể chơi được (chứa các lane).
+    /// Giới hạn tối đa bằng độ rộng của background hiện tại để tránh lane bị tràn ra ngoài 
+    /// trên các màn hình quá rộng (ví dụ iPad 4:3).
+    /// Đối với màn hình ngang (desktop), chỉ lấy 1/4 màn hình ở giữa.
+    /// </summary>
+    private float GetPlayableWidth()
+    {
+        if (mainCamera == null) return 1f;
+
+        float camWidth = mainCamera.orthographicSize * mainCamera.aspect * 2f;
+
+        if (_isPortrait)
+        {
+            // Màn hình dọc: Giới hạn tối đa bằng độ rộng background dọc
+            if (bgIngamePortrait != null && bgIngamePortrait.sprite != null)
+            {
+                float bgWidth = bgIngamePortrait.bounds.size.x;
+                return Mathf.Min(camWidth, bgWidth);
+            }
+        }
+        else
+        {
+            // Màn hình ngang: Chỉ lấy phần trung tâm (khoảng 1/4 màn hình)
+            return camWidth / 4f;
+        }
+
+        return camWidth;
+    }
+
+    /// <summary>
+    /// Lấy vị trí X của lane — tính động từ độ rộng màn hình, giới hạn bởi background.
     /// </summary>
     public float GetLaneX(int laneIndex)
     {
@@ -146,13 +226,11 @@ public class OrientationManager : MonoBehaviour
         int count = gameConfig.laneCount;
         if (laneIndex < 0 || laneIndex >= count) return 0f;
 
-        // Camera half-width trong world units
-        float halfWidth = mainCamera.orthographicSize * mainCamera.aspect;
-        float totalWidth = halfWidth * 2f;
+        float totalWidth = GetPlayableWidth();
         float laneWidth  = totalWidth / count;
 
         // Center của lane = cạnh trái + (laneIndex + 0.5) * laneWidth
-        float laneCenter = -halfWidth + (laneIndex + 0.5f) * laneWidth;
+        float laneCenter = -(totalWidth / 2f) + (laneIndex + 0.5f) * laneWidth;
 
         return laneCenter;
     }
@@ -164,8 +242,7 @@ public class OrientationManager : MonoBehaviour
     {
         if (mainCamera == null || gameConfig == null) return 1f;
 
-        float halfWidth = mainCamera.orthographicSize * mainCamera.aspect;
-        return (halfWidth * 2f) / gameConfig.laneCount;
+        return GetPlayableWidth() / gameConfig.laneCount;
     }
 
     /// <summary>

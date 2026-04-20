@@ -38,16 +38,19 @@ public class StartPanelController : MonoBehaviour
     {
         if (_tapped) return;
         if (GameManager.Instance == null) return;
-        if (GameManager.Instance.CurrentState != GameState.WaitingToStart) return;
+
+        // Ch\u1ec9 cho ph\u00e9p tap t\u1eeb Intro (nh\u1ea3y th\u1eb3ng Playing, b\u1ecf qua WaitingToStart)
+        GameState state = GameManager.Instance.CurrentState;
+        if (state != GameState.Intro && state != GameState.WaitingToStart) return;
 
         _tapped = true;
 
-        Debug.Log("[StartPanelController] Start Tile tapped! → Playing");
+        Debug.Log($"[StartPanelController] Start Tile tapped from {state} \u2192 Playing");
 
-        // Chuyển game state → Playing (sẽ trigger nhạc + spawn)
+        // Chuy\u1ec3n game state \u2192 Playing (s\u1ebd trigger nh\u1ea1c + spawn)
         GameManager.Instance.SetState(GameState.Playing);
 
-        // Animation biến mất cho Start Tile
+        // Animation bi\u1ebfn m\u1ea5t cho Start Tile
         if (tileController != null)
         {
             tileController.tileState = TileState.Completed;

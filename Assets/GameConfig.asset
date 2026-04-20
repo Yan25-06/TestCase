@@ -13,16 +13,17 @@ MonoBehaviour:
   m_Name: GameConfig
   m_EditorClassIdentifier: Assembly-CSharp::GameConfig
   laneCount: 4
+  musicStartDelay: 1.4
   horizontalPadding: 0
   fallbackLaneXPositions:
   - -1.5
   - -0.5
   - 0.5
   - 1.5
-  baseScrollSpeed: 4
-  speedIncreasePerScore: 0.03
+  baseScrollSpeed: 8
+  speedIncreasePerScore: 0.01
   spawnInterval: 1
-  spawnY: 13
+  spawnY: 8
   missY: -10
   hitWindowTop: -3.1
   hitWindowBottom: -4.1
@@ -33,5 +34,272 @@ MonoBehaviour:
   landscapeLaneScale: 1.5
   beatmap:
   - time: 0
-    type: 0
+    type: 1
+    lane: 3
+  - time: 0.19
+    type: 1
+    lane: 2
+  - time: 0.381
+    type: 1
+    lane: 1
+  - time: 0.571
+    type: 1
     lane: 0
+  - time: 0.952
+    type: 1
+    lane: 3
+  - time: 1.143
+    type: 1
+    lane: 0
+  - time: 2.286
+    type: 1
+    lane: 0
+  - time: 2.476
+    type: 1
+    lane: 1
+  - time: 2.667
+    type: 1
+    lane: 2
+  - time: 2.857
+    type: 1
+    lane: 3
+  - time: 3.238
+    type: 1
+    lane: 0
+  - time: 3.429
+    type: 1
+    lane: 3
+  - time: 4.571
+    type: 1
+    lane: 0
+  - time: 4.952
+    type: 1
+    lane: 2
+  - time: 5.143
+    type: 1
+    lane: 0
+  - time: 5.476
+    type: 1
+    lane: 3
+  - time: 5.714
+    type: 1
+    lane: 1
+  - time: 6.095
+    type: 1
+    lane: 2
+  - time: 6.286
+    type: 1
+    lane: 0
+  - time: 6.667
+    type: 1
+    lane: 3
+  - time: 6.857
+    type: 1
+    lane: 1
+  - time: 7.429
+    type: 1
+    lane: 3
+  - time: 7.429
+    type: 1
+    lane: 1
+  - time: 8
+    type: 2
+    lane: 2
+  - time: 8
+    type: 2
+    lane: 0
+  - time: 9.143
+    type: 1
+    lane: 3
+  - time: 9.333
+    type: 1
+    lane: 2
+  - time: 9.524
+    type: 1
+    lane: 1
+  - time: 9.714
+    type: 1
+    lane: 0
+  - time: 10.095
+    type: 1
+    lane: 3
+  - time: 10.286
+    type: 1
+    lane: 0
+  - time: 10.857
+    type: 1
+    lane: 3
+  - time: 10.857
+    type: 1
+    lane: 0
+  - time: 11.429
+    type: 1
+    lane: 0
+  - time: 11.619
+    type: 1
+    lane: 1
+  - time: 11.81
+    type: 1
+    lane: 2
+  - time: 12
+    type: 1
+    lane: 3
+  - time: 12.381
+    type: 1
+    lane: 0
+  - time: 12.571
+    type: 1
+    lane: 3
+  - time: 13.143
+    type: 1
+    lane: 3
+  - time: 13.143
+    type: 1
+    lane: 0
+  - time: 13.714
+    type: 1
+    lane: 3
+  - time: 14.095
+    type: 1
+    lane: 2
+  - time: 14.095
+    type: 1
+    lane: 0
+  - time: 14.286
+    type: 1
+    lane: 3
+  - time: 14.667
+    type: 1
+    lane: 2
+  - time: 14.667
+    type: 1
+    lane: 0
+  - time: 14.857
+    type: 1
+    lane: 1
+  - time: 15.238
+    type: 1
+    lane: 2
+  - time: 15.429
+    type: 1
+    lane: 1
+  - time: 15.81
+    type: 1
+    lane: 3
+  - time: 16
+    type: 1
+    lane: 0
+  - time: 16.381
+    type: 1
+    lane: 2
+  - time: 16.571
+    type: 1
+    lane: 1
+  - time: 16.952
+    type: 1
+    lane: 3
+  - time: 17.143
+    type: 1
+    lane: 0
+  - time: 18.286
+    type: 1
+    lane: 0
+  - time: 18.476
+    type: 1
+    lane: 1
+  - time: 18.667
+    type: 1
+    lane: 2
+  - time: 18.857
+    type: 1
+    lane: 3
+  - time: 19.238
+    type: 1
+    lane: 0
+  - time: 19.429
+    type: 1
+    lane: 3
+  - time: 20
+    type: 1
+    lane: 3
+  - time: 20
+    type: 1
+    lane: 0
+  - time: 20.571
+    type: 1
+    lane: 3
+  - time: 20.762
+    type: 1
+    lane: 2
+  - time: 20.952
+    type: 1
+    lane: 1
+  - time: 21.143
+    type: 1
+    lane: 0
+  - time: 21.524
+    type: 1
+    lane: 3
+  - time: 21.714
+    type: 1
+    lane: 0
+  - time: 22.286
+    type: 1
+    lane: 3
+  - time: 22.286
+    type: 1
+    lane: 0
+  - time: 22.857
+    type: 1
+    lane: 1
+  - time: 23.238
+    type: 1
+    lane: 2
+  - time: 23.238
+    type: 1
+    lane: 0
+  - time: 23.429
+    type: 1
+    lane: 3
+  - time: 23.81
+    type: 1
+    lane: 3
+  - time: 23.81
+    type: 1
+    lane: 1
+  - time: 24
+    type: 1
+    lane: 0
+  - time: 24.381
+    type: 1
+    lane: 2
+  - time: 24.381
+    type: 1
+    lane: 0
+  - time: 24.571
+    type: 1
+    lane: 3
+  - time: 24.952
+    type: 1
+    lane: 2
+  - time: 24.952
+    type: 1
+    lane: 0
+  - time: 25.143
+    type: 1
+    lane: 1
+  - time: 25.143
+    type: 1
+    lane: 3
+  - time: 25.714
+    type: 1
+    lane: 2
+  - time: 25.714
+    type: 1
+    lane: 0
+  - time: 26.286
+    type: 1
+    lane: 3
+  - time: 26.286
+    type: 1
+    lane: 1
