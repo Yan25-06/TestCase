@@ -33,6 +33,10 @@ public class UIManager : MonoBehaviour
     [Tooltip("Hand pointing image")]
     [SerializeField] private Image handPointing;
 
+    [Header("=== Song Info UI ===")]
+    [SerializeField] private TextMeshProUGUI songNameText;
+    [SerializeField] private TextMeshProUGUI highscoreText;
+
     // ============================================================
     // LIFECYCLE
     // ============================================================
@@ -44,6 +48,8 @@ public class UIManager : MonoBehaviour
             return;
         }
         Instance = this;
+
+        SetupSongInfo();
     }
 
     private void OnEnable()
@@ -156,6 +162,28 @@ public class UIManager : MonoBehaviour
             // Reset alpha cho lần sau
             handPointing.color = Color.white;
         });
+    }
+
+    // ============================================================
+    // SONG INFO SETUP
+    // ============================================================
+    private void SetupSongInfo()
+    {
+        if (songNameText != null)
+        {
+            songNameText.text = "ROUND AND ROUND";
+            // Color: b200ff
+            if (ColorUtility.TryParseHtmlString("#B200FF", out Color songColor))
+            {
+                songNameText.color = songColor;
+            }
+        }
+
+        if (highscoreText != null)
+        {
+            // High score (black): 2908 (color: fe138a)
+            highscoreText.text = "<color=#000000>Highscore:</color> <color=#FE138A>2908</color>";
+        }
     }
 
     // ============================================================
