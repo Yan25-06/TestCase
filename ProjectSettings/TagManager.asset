@@ -41,6 +41,18 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: Background
+    uniqueID: 1942576689
+    locked: 0
+  - name: New Layer 1
+    uniqueID: 1683843557
+    locked: 0
+  - name: Tiles
+    uniqueID: 1456828887
+    locked: 0
+  - name: BGCE
+    uniqueID: 1392064935
+    locked: 0
   m_RenderingLayers:
   - Default
   m_MigratedRenderPipelines: []
