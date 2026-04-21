@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
+using System.Runtime.InteropServices;
 
 // ============================================================
 // CTAManager.cs — Màn hình CTA (Call-To-Action)
@@ -64,9 +65,6 @@ public class CTAManager : MonoBehaviour
             ctaButton.onClick.RemoveListener(OnCTAButtonClicked);
     }
 
-    // ============================================================
-    // STATE HANDLING
-    // ============================================================
     private void HandleGameStateChanged(GameState oldState, GameState newState)
     {
         if (newState == GameState.CTA)
@@ -130,12 +128,20 @@ public class CTAManager : MonoBehaviour
     // ============================================================
     // BUTTON
     // ============================================================
+    // Import hàm Javascript từ file PlayablePlugin.jslib
+    [DllImport("__Internal")]
+    private static extern void OpenStoreLink(string url);
+
     private void OnCTAButtonClicked()
     {
         Debug.Log($"[CTAManager] CTA Button clicked → Opening: {storeURL}");
 
-        // Mở store link
+        // Mở store link đúng chuẩn Ad Network
+#if UNITY_WEBGL && !UNITY_EDITOR
+        OpenStoreLink(storeURL);
+#else
         Application.OpenURL(storeURL);
+#endif
 
         // SFX
         if (AudioManager.Instance != null)

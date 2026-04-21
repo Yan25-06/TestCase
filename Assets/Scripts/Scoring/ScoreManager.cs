@@ -1,4 +1,5 @@
 using UnityEngine;
+using DG.Tweening;
 
 // ============================================================
 // ScoreManager.cs — Visual feedback cho scoring
@@ -9,6 +10,10 @@ using UnityEngine;
 public class ScoreManager : MonoBehaviour
 {
     public static ScoreManager Instance { get; private set; }
+
+    [Header("=== Screen Shake ===")]
+    [SerializeField] private float shakeStrength = 0.3f;
+    [SerializeField] private float shakeDuration = 0.2f;
 
     // ============================================================
     // LIFECYCLE
@@ -35,5 +40,28 @@ public class ScoreManager : MonoBehaviour
         if (result == HitResult.None) return;
         if (UIManager.Instance != null)
             UIManager.Instance.ShowHitResultText(result);
+    }
+
+    // ============================================================
+    // SCREEN SHAKE
+    // ============================================================
+
+    /// <summary>
+    /// Shake camera nhẹ khi Perfect Hit (head đổi thành XX)
+    /// </summary>
+    public void ShakeCamera()
+    {
+        if (Camera.main == null) return;
+
+        // Kill any existing shake trước
+        Camera.main.transform.DOKill();
+
+        Camera.main.transform.DOShakePosition(
+            shakeDuration,
+            shakeStrength,
+            vibrato: 10,
+            randomness: 90,
+            fadeOut: true
+        );
     }
 }

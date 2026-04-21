@@ -185,6 +185,9 @@ public class TileController : MonoBehaviour
             if (deadHeadSprite != null)
                 headRenderer.sprite = deadHeadSprite;
 
+            if (ScoreManager.Instance != null)
+                ScoreManager.Instance.ShakeCamera();
+
 #if UNITY_EDITOR
             Debug.Log($"[TileController] Head swapped to XX! Lane {laneIndex}");
 #endif
@@ -249,6 +252,9 @@ public class TileController : MonoBehaviour
         {
             _headSwapped = true;
             headRenderer.sprite = deadHeadSprite;
+
+            if (ScoreManager.Instance != null)
+                ScoreManager.Instance.ShakeCamera();
         }
 
 #if UNITY_EDITOR

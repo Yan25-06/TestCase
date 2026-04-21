@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using DG.Tweening;
 
 // ============================================================
 // StartPanelController.cs — Logic riêng cho Start Tile
@@ -16,6 +17,7 @@ public class StartPanelController : MonoBehaviour, IPointerClickHandler
     [SerializeField] private TileController tileController;
 
     private bool _tapped = false;
+    private Tween _breathingTween;
 
     private void Awake()
     {
@@ -26,6 +28,18 @@ public class StartPanelController : MonoBehaviour, IPointerClickHandler
     private void OnEnable()
     {
         _tapped = false;
+        
+        // Hoạt ảnh nhịp thở (Breathing)
+        transform.localScale = Vector3.one;
+        _breathingTween = transform.DOScale(1.05f, 0.8f)
+            .SetLoops(-1, LoopType.Yoyo)
+            .SetEase(Ease.InOutSine);
+    }
+
+    private void OnDisable()
+    {
+        _breathingTween?.Kill();
+        transform.localScale = Vector3.one;
     }
 
     // ============================================================
@@ -51,19 +65,36 @@ public class StartPanelController : MonoBehaviour, IPointerClickHandler
         Debug.Log($"[StartPanelController] Start Tile tapped from {state} \u2192 Playing");
 #endif
 
-        // Chuy\u1ec3n game state \u2192 Playing (s\u1ebd trigger nh\u1ea1c + spawn)
+        // Phát âm thanh ngay lập tức để ép trình duyệt "Mở Khóa" (Unlock) Web Audio API
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlaySFX(SFXType.Tap);
+        }
+
+        // Hủy breathing
+        _breathingTween?.Kill();
+
+        // QUAN TRỌNG CHO WEBGL MOBILE: Phải đổi state (và phát nhạc) NGAY LẬP TỨC 
+        // trong cùng 1 frame của sự kiện Click. Nếu để trong OnComplete (bị delay), 
+        // trình duyệt di động (Safari/Chrome) sẽ chặn nhạc vì cho rằng không có tương tác người dùng.
         GameManager.Instance.SetState(GameState.Playing);
 
-        // Animation bi\u1ebfn m\u1ea5t cho Start Tile
-        if (tileController != null)
-        {
-            tileController.tileState = TileState.Completed;
-            tileController.PlayCompletionAnimation();
-        }
-        else
-        {
-            gameObject.SetActive(false);
-        }
+        // Hoạt ảnh Squish (Bóp méo) trước khi bắt đầu
+        transform.DOScale(new Vector3(1.2f, 0.8f, 1f), 0.15f)
+            .SetEase(Ease.OutQuad)
+            .OnComplete(() =>
+            {
+                // Animation biến mất cho Start Tile
+                if (tileController != null)
+                {
+                    tileController.tileState = TileState.Completed;
+                    tileController.PlayCompletionAnimation();
+                }
+                else
+                {
+                    gameObject.SetActive(false);
+                }
+            });
     }
 
     // IPointerClickHandler: Unity EventSystem gọi khi có click/tap

@@ -3063,7 +3063,7 @@ MonoBehaviour:
   sfxPerfectHit: {fileID: 0}
   sfxGameOver: {fileID: 0}
   sfxButtonClick: {fileID: 0}
-  musicVolume: 0.7
+  musicVolume: 1
   sfxVolume: 1
 --- !u!4 &1400637509
 Transform:
@@ -3680,6 +3680,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca3817cc73cd52645b72b73ad52d968e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ScoreManager
+  shakeStrength: 0.3
+  shakeDuration: 0.2
 --- !u!4 &1906502295
 Transform:
   m_ObjectHideFlags: 0

@@ -89,13 +89,37 @@ public class UIManager : MonoBehaviour
                 break;
 
             case GameState.GameOver:
-                // Không có game over panel — chỉ delay rồi chuyển thẳng sang CTA
-                // Dùng DOTween thay vì Invoke — không dùng string reflection
-                DOVirtual.DelayedCall(gameOverToCTADelay, () =>
+                // Kích hoạt Slow-motion
+                Time.timeScale = 0.2f;
+
+                // Tạo nhanh một lớp chớp đỏ toàn màn hình (Red Overlay)
+                GameObject redFlash = new GameObject("RedFlashOverlay");
+                redFlash.transform.SetParent(ingamePanel != null ? ingamePanel.transform : transform, false);
+                redFlash.transform.SetAsLastSibling();
+
+                RectTransform rt = redFlash.AddComponent<RectTransform>();
+                rt.anchorMin = Vector2.zero;
+                rt.anchorMax = Vector2.one;
+                rt.sizeDelta = Vector2.zero;
+
+                UnityEngine.UI.Image img = redFlash.AddComponent<UnityEngine.UI.Image>();
+                img.color = new Color(1f, 0f, 0f, 0f);
+
+                // Animation chớp đỏ (SetUpdate(true) để bỏ qua ảnh hưởng của Slow-motion)
+                Sequence seq = DOTween.Sequence().SetUpdate(true);
+                seq.Append(img.DOFade(0.5f, 0.1f));
+                seq.Append(img.DOFade(0f, 0.8f));
+
+                // Đợi 1 giây (thời gian thực tế) rồi trả lại tốc độ bình thường và chuyển sang CTA
+                DOVirtual.DelayedCall(1f, () => 
                 {
+                    Time.timeScale = 1f;
+                    if (redFlash != null) Destroy(redFlash);
+                    
                     if (GameManager.Instance != null)
                         GameManager.Instance.SetState(GameState.CTA);
-                });
+                        
+                }, ignoreTimeScale: true);
                 break;
 
             case GameState.CTA:
