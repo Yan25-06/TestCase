@@ -122,6 +122,58 @@ public class UIManager : MonoBehaviour
                 }, ignoreTimeScale: true);
                 break;
 
+            case GameState.GameCleared:
+                // 1. Tạo overlay đen mờ để làm tối background (khóa gameplay thì tự động do InputHandler check state)
+                GameObject winOverlay = new GameObject("WinOverlay");
+                winOverlay.transform.SetParent(ingamePanel != null ? ingamePanel.transform : transform, false);
+                winOverlay.transform.SetAsLastSibling();
+
+                RectTransform overlayRt = winOverlay.AddComponent<RectTransform>();
+                overlayRt.anchorMin = Vector2.zero;
+                overlayRt.anchorMax = Vector2.one;
+                overlayRt.sizeDelta = Vector2.zero;
+
+                UnityEngine.UI.Image overlayImg = winOverlay.AddComponent<UnityEngine.UI.Image>();
+                overlayImg.color = new Color(0f, 0f, 0f, 0f);
+                overlayImg.DOFade(0.7f, 0.3f); // Làm tối 70%
+
+                // 2. Tạo dòng chữ "CLEARED!" nảy mạnh ra giữa màn hình
+                GameObject winTextObj = new GameObject("WinText");
+                winTextObj.transform.SetParent(winOverlay.transform, false);
+
+                RectTransform textRt = winTextObj.AddComponent<RectTransform>();
+                textRt.anchorMin = new Vector2(0.5f, 0.5f);
+                textRt.anchorMax = new Vector2(0.5f, 0.5f);
+                textRt.anchoredPosition = Vector2.zero;
+                textRt.sizeDelta = new Vector2(800f, 200f);
+
+                TMPro.TextMeshProUGUI winText = winTextObj.AddComponent<TMPro.TextMeshProUGUI>();
+                winText.text = "CLEARED!";
+                winText.fontSize = 120;
+                winText.fontStyle = TMPro.FontStyles.Bold;
+                winText.color = new Color(1f, 0.85f, 0f, 1f); // Màu Vàng Kim
+                winText.alignment = TMPro.TextAlignmentOptions.Center;
+                winText.enableWordWrapping = false;
+
+                // Animation nảy mạnh (pop out elastic)
+                winTextObj.transform.localScale = Vector3.zero;
+                winTextObj.transform.DOScale(Vector3.one, 0.8f).SetEase(Ease.OutElastic);
+
+                // Phát tiếng chúc mừng (dùng tạm PerfectHit)
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlaySFX(SFXType.PerfectHit);
+                }
+
+                // 3. Đợi 2 giây rồi chuyển sang màn hình CTA
+                DOVirtual.DelayedCall(2.5f, () => 
+                {
+                    if (winOverlay != null) Destroy(winOverlay);
+                    if (GameManager.Instance != null)
+                        GameManager.Instance.SetState(GameState.CTA);
+                });
+                break;
+
             case GameState.CTA:
                 // Ẩn ingame, hiện CTA panel
                 // BGEC background được OrientationManager bật (world-space)
