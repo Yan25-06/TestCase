@@ -6,6 +6,7 @@ public enum GameState
     Intro,    // Màn hình intro / splash
     Playing,  // Gameplay đang diễn ra
     GameOver, // Người chơi miss tile
+    GameCleared, // Hoàn thành bài nhạc (Win)
     CTA       // Màn hình Call-To-Action
 }
 

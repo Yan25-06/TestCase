@@ -162,12 +162,12 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Gọi khi hoàn thành tất cả beatmap → chuyển CTA
+    /// Gọi khi hoàn thành tất cả beatmap → chuyển sang win state
     /// </summary>
     public void TriggerSongComplete()
     {
         if (_currentState != GameState.Playing) return;
-        SetState(GameState.CTA);
+        SetState(GameState.GameCleared);
     }
 
     // ============================================================
